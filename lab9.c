@@ -9,16 +9,11 @@ struct RecordType
     int     order; 
 };
 
-struct Node
-{
-    struct RecordType record;
-    struct Node* next;
-};
-
-// Fill out this structure
+// HashType - hash table structure
 struct HashType
 {
-    struct Node* head;
+    struct RecordType record;
+    struct HashType* next;
 };
 
 // Compute the hash function
@@ -27,7 +22,7 @@ int hash(int x)
     return x % 23;
 }
 
-// Parses input file to an integer array
+// parses input file to an integer array
 int parseData(char* inputFileName, struct RecordType** ppData)
 {
     FILE* inFile = fopen(inputFileName, "r");
@@ -64,7 +59,7 @@ int parseData(char* inputFileName, struct RecordType** ppData)
     return dataSz;
 }
 
-// Prints the records
+// prints the records
 void printRecords(struct RecordType pData[], int dataSz)
 {
     int i;
@@ -76,23 +71,23 @@ void printRecords(struct RecordType pData[], int dataSz)
     printf("\n\n");
 }
 
-// Display records in the hash structure
-// Skip the indices which are free
-// The output will be in the format:
+// display records in the hash structure
+// skip the indices which are free
+// the output will be in the format:
 // index x -> id, name, order -> id, name, order ....
 void displayRecordsInHash(struct HashType *pHashArray, int hashSz)
 {
-    struct Node* temp;
+    struct HashType* temp;
     for (int i = 0; i < hashSz; ++i)
     {
-        if (pHashArray[i].head != NULL) {
+        if (pHashArray[i].next != NULL) {
             printf("index %d -> ", i);
-            temp = pHashArray[i].head;
-            printf("%d, %c, %d", temp->record.id, temp->record.name, temp->record.order);
-            temp = temp->next;
+            temp = pHashArray[i].next;
             while (temp != NULL)
             {
-                printf(" -> %d, %c, %d", temp->record.id, temp->record.name, temp->record.order);
+                printf("%d, %c, %d", temp->record.id, temp->record.name, temp->record.order);
+                if (temp->next != NULL)
+                    printf(" -> ");
                 temp = temp->next;
             }
             printf("\n");
@@ -107,50 +102,39 @@ int main(void)
 
     recordSz = parseData("input.txt", &pRecords);
     printRecords(pRecords, recordSz);
-    // Your hash implementation
+
     int hashSz = 2 * recordSz;
+
     struct HashType* pHashArray = (struct HashType*)malloc(sizeof(struct HashType) * hashSz);
+
     for (int i = 0; i < hashSz; ++i)
     {
-        pHashArray[i].head = NULL;
+        pHashArray[i].next = NULL;
     }
+
     for (int i = 0; i < recordSz; ++i)
     {
         int index = hash(pRecords[i].id);
 
-        struct Node* newNode = (struct Node*)malloc(sizeof(struct Node));
+        struct HashType* newNode = (struct HashType*)malloc(sizeof(struct HashType));
         newNode->record = pRecords[i];
         newNode->next = NULL;
-
-        if (pHashArray[index].head == NULL) {
-            pHashArray[index].head = newNode;
+        if (pHashArray[index].next == NULL) {
+            pHashArray[index].next = newNode;
         } else {
-
-            struct Node* current = pHashArray[index].head;
-            struct Node* prev = NULL;
-            while (current != NULL && current->record.id < pRecords[i].id) {
-                prev = current;
-                current = current->next;
-            }
-            if (prev == NULL) {
-                newNode->next = pHashArray[index].head;
-                pHashArray[index].head = newNode;
-            } else {
-                prev->next = newNode;
-                newNode->next = current;
-            }
+            newNode->next = pHashArray[index].next;
+            pHashArray[index].next = newNode;
         }
     }
 
     displayRecordsInHash(pHashArray, hashSz);
-
     free(pRecords);
     for (int i = 0; i < hashSz; ++i)
     {
-        struct Node* temp = pHashArray[i].head;
+        struct HashType* temp = pHashArray[i].next;
         while (temp != NULL)
         {
-            struct Node* next = temp->next;
+            struct HashType* next = temp->next;
             free(temp);
             temp = next;
         }
